@@ -112,7 +112,7 @@ class AITranslator:
             "it": "Italian", "pt": "Portuguese", "ru": "Russian", "zh": "Chinese",
             "ja": "Japanese", "ko": "Korean", "ar": "Arabic", "hi": "Hindi",
             "th": "Thai", "vi": "Vietnamese", "id": "Indonesian", "ms": "Malay",
-            "tg": "Tajik", "uz": "Uzbek", "fa": "Persian", "ur": "Urdu"
+            "tj": "Tajik", "uz": "Uzbek", "fa": "Persian", "ur": "Urdu"
         }
         
         source_name = lang_names.get(source_lang, source_lang)
@@ -185,72 +185,3 @@ Important:
                 translations[original] = original  # Fallback to original
         
         return translations
-
-    def translate_single(
-        self, 
-        text: str, 
-        source_lang: str = "en", 
-        target_lang: str = "es",
-        context: Optional[str] = None
-    ) -> str:
-        """
-        Translate a single string
-        
-        Args:
-            text: Text to translate
-            source_lang: Source language code
-            target_lang: Target language code
-            context: Additional context for translation
-            
-        Returns:
-            Translated text
-        """
-        result = self.translate_batch([text], source_lang, target_lang, context)
-        return result.get(text, text)
-
-    def get_supported_languages(self) -> List[str]:
-        """Get list of commonly supported language codes"""
-        return [
-            "af", "ar", "bg", "bn", "bs", "ca", "cs", "da", "de", "el",
-            "en", "es", "et", "fa", "fi", "fr", "gu", "hi", "hr", "hu",
-            "id", "is", "it", "ja", "ka", "kk", "ko", "lt", "lv", "mk",
-            "ms", "mt", "nb", "nl", "pl", "pt", "ro", "ru", "sk", "sl",
-            "sq", "sr", "sv", "sw", "ta", "te", "th", "tg", "tr", "uk",
-            "ur", "uz", "vi", "zh"
-        ]
-
-    def detect_language(self, text: str) -> str:
-        """
-        Detect the language of given text
-        
-        Args:
-            text: Text to analyze
-            
-        Returns:
-            Detected language code
-        """
-        self._rate_limit()
-        
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",  # Use cheaper model for detection
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a language detection expert. Respond only with the ISO 639-1 language code (2 letters) of the given text."
-                    },
-                    {
-                        "role": "user", 
-                        "content": f"What language is this text: '{text}'"
-                    }
-                ],
-                temperature=0,
-                max_tokens=10
-            )
-            
-            detected = response.choices[0].message.content.strip().lower()
-            return detected if len(detected) == 2 else "en"
-            
-        except Exception as e:
-            print(f"Language detection error: {str(e)}")
-            return "en"  # Default to English

@@ -1,14 +1,13 @@
-exclude: 'node_modules|.git'
+exclude: "node_modules|.git"
 default_stages: [pre-commit]
 fail_fast: false
-
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        files: "frappe_translator.*"
+        files: "frappe_ai_translation.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-merge-conflict
       - id: check-ast
@@ -37,33 +36,32 @@ repos:
         types_or: [javascript, vue, scss]
         # Ignore any files that might contain jinja / bundles
         exclude: |
-            (?x)^(
-                frappe_translator/public/dist/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                frappe_translator/templates/includes/.*|
-                frappe_translator/public/js/lib/.*
-            )$
-
+          (?x)^(
+              frappe_ai_translation/public/dist/.*|
+              .*node_modules.*|
+              .*boilerplate.*|
+              frappe_ai_translation/templates/includes/.*|
+              frappe_ai_translation/public/js/lib/.*
+          )$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.44.0
     hooks:
       - id: eslint
         types_or: [javascript]
-        args: ['--quiet']
+        args: ["--quiet"]
         # Ignore any files that might contain jinja / bundles
         exclude: |
-            (?x)^(
-                frappe_translator/public/dist/.*|
-                cypress/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                frappe_translator/templates/includes/.*|
-                frappe_translator/public/js/lib/.*
-            )$
+          (?x)^(
+              frappe_ai_translation/public/dist/.*|
+              cypress/.*|
+              .*node_modules.*|
+              .*boilerplate.*|
+              frappe_ai_translation/templates/includes/.*|
+              frappe_ai_translation/public/js/lib/.*
+          )$
 
 ci:
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

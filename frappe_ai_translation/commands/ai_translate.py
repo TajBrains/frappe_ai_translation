@@ -124,7 +124,6 @@ def generate_pot_ai(target_locale: str, app: tuple = (), output_app: str = None)
 @click.option("--source-locale", default="en", help="Source language code (default: en)")
 @click.option("--model", default="gpt-4", help="OpenAI model to use for translation")
 @click.option("--batch-size", default=50, help="Number of strings to translate in each batch")
-@click.option("--context", "translation_context", help="Additional context for translation (e.g., 'ERP system', 'e-commerce')")
 @click.option("--dry-run", is_flag=True, help="Show what would be translated without making changes")
 @click.option("--overwrite-existing", is_flag=True, help="Overwrite existing translations (default: skip existing)")
 def translate_ai(
@@ -133,7 +132,6 @@ def translate_ai(
     source_locale: str = "en",
     model: str = "gpt-4",
     batch_size: int = 50,
-    translation_context: str | None = None,
     dry_run: bool = False,
     overwrite_existing: bool = False
 ):
@@ -170,57 +168,65 @@ def translate_ai(
     for message in po_catalog:
         if not message.id or not message.id.strip():
             continue
-            
+
         # Check if string needs translation
         has_translation = message.string and message.string.strip()
-        
+
         # Add to translation list if not translated or if overwriting existing
         if not has_translation or overwrite_existing:
-            strings_to_translate.append(message.id)
-    
+            strings_to_translate.append({
+                'text': message.id,
+                'context': message.context
+            })
+
     total_strings = len(strings_to_translate)
     click.echo(f"📝 Found {total_strings} untranslated strings in {app}")
-        
+
     if not strings_to_translate:
         click.echo(f"✅ No strings to translate in {app}")
         return
-        
+
     click.echo(f"\n📊 Total: {total_strings} strings to translate in {app}")
-    
+
     if dry_run:
         click.echo("Would translate:")
-        for i, string in enumerate(strings_to_translate[:5], 1):
-            click.echo(f"  {i}. {string[:60]}...")
+        for i, item in enumerate(strings_to_translate[:5], 1):
+            text = item['text']
+            context = f" (context: {item['context']})" if item['context'] else ""
+            click.echo(f"  {i}. {text[:60]}...{context}")
         if len(strings_to_translate) > 5:
             click.echo(f"  ... and {total_strings - 5} more")
         return
-        
+
     # Translate all strings in batches
     total_translated = 0
     total_batches = (total_strings + batch_size - 1) // batch_size
-    
+
     for i in range(0, total_strings, batch_size):
         batch = strings_to_translate[i:i + batch_size]
         batch_num = (i // batch_size) + 1
-        
+
         click.echo(f"🔄 Translating batch {batch_num}/{total_batches} ({len(batch)} strings)...")
-        
+
         try:
             translations = translator.translate_batch(
                 batch, 
                 source_lang=source_locale,
                 target_lang=target_locale,
-                context=translation_context
             )
             
             # Update PO catalog with translations
             batch_translated = 0
             for original, translated in translations.items():
                 if translated:
-                    # Get the message from catalog
-                    message = po_catalog.get(original)
+                    # Find the message in catalog by iteration (po_catalog.get() doesn't work reliably)
+                    message = None
+                    for msg in po_catalog:
+                        if msg.id == original:
+                            message = msg
+                            break
+                    
                     if message is None:
-                        # This shouldn't happen, but let's handle it gracefully
                         click.echo(f"⚠️  Warning: Message '{original[:50]}...' not found in catalog, skipping")
                         continue
                     
@@ -233,12 +239,9 @@ def translate_ai(
             if batch_translated > 0:
                 po_path = write_catalog(app, po_catalog, target_locale)
                 click.echo(f"💾 Saved {batch_translated} translations to {po_path}")
-                    
         except Exception as e:
             click.echo(f"❌ Error translating batch {batch_num}: {str(e)}")
             continue
-    
-    # Final summary
     if total_translated > 0:
         click.echo(f"✅ Completed! Translated {total_translated} strings in {app}")
         click.echo(f"📁 Final file: {po_path}")

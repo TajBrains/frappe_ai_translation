@@ -53,7 +53,6 @@ class AITranslator:
         strings: List[str], 
         source_lang: str = "en", 
         target_lang: str = "es",
-        context: Optional[str] = None
     ) -> Dict[str, str]:
         """
         Translate a batch of strings
@@ -62,18 +61,27 @@ class AITranslator:
             strings: List of strings to translate
             source_lang: Source language code
             target_lang: Target language code  
-            context: Additional context for translation
             
         Returns:
             Dictionary mapping original strings to translations
         """
         if not strings:
             return {}
+        
+        # Extract text and contexts from the new format
+        if isinstance(strings[0], dict):
+            # New format: list of {'text': str, 'context': str}
+            string_texts = [item['text'] for item in strings]
+            string_contexts = [item.get('context', '') for item in strings]
+        else:
+            # Old format: list of strings (fallback)
+            string_texts = strings
+            string_contexts = ['' for _ in strings]
             
         self._rate_limit()
         
-        # Build the translation prompt
-        prompt = self._build_translation_prompt(strings, source_lang, target_lang, context)
+        # Build the translation prompt with contexts
+        prompt = self._build_translation_prompt_with_contexts(string_texts, string_contexts, source_lang, target_lang)
         
         try:
             response = self.client.chat.completions.create(
@@ -90,21 +98,21 @@ class AITranslator:
             )
             
             result_text = response.choices[0].message.content
-            return self._parse_translation_response(strings, result_text)
-            
+            return self._parse_translation_response(string_texts, result_text)
+
         except Exception as e:
             frappe.log_error(f"OpenAI translation error: {str(e)}")
             print(f"❌ Translation error: {str(e)}")
             return {}
 
-    def _build_translation_prompt(
+    def _build_translation_prompt_with_contexts(
         self, 
         strings: List[str], 
+        contexts: List[str],
         source_lang: str, 
-        target_lang: str, 
-        context: Optional[str]
+        target_lang: str
     ) -> str:
-        """Build the translation prompt for OpenAI"""
+        """Build the translation prompt for OpenAI with individual contexts"""
         
         # Language name mapping for better context
         lang_names = {
@@ -118,21 +126,21 @@ class AITranslator:
         source_name = lang_names.get(source_lang, source_lang)
         target_name = lang_names.get(target_lang, target_lang)
         
-        context_info = f"\n\nContext: This is for {context}" if context else ""
-        context_info += "\n\nThis is software localization for an ERP system (Enterprise Resource Planning). Please ensure translations are:"
-        context_info += "\n- Appropriate for business/professional context"
-        context_info += "\n- Consistent with common ERP terminology"
-        context_info += "\n- Natural and user-friendly"
-        context_info += "\n- Preserve any technical terms, field names, or format specifiers (like {0}, %s, etc.)"
+        context_info = "This is software localization for an ERP system. Each string has specific context about where/how it's used. Please:"
+        context_info += "\n- Use the context to provide accurate, contextual translations"
+        context_info += "\n- Keep translations appropriate for business/professional context"  
+        context_info += "\n- Preserve any technical terms, placeholders like {0}, %s, etc."
+        context_info += "\n- Make translations natural and user-friendly"
         
-        # Format strings for the prompt
+        # Format strings with their individual contexts
         numbered_strings = []
-        for i, string in enumerate(strings, 1):
+        for i, (string, context) in enumerate(zip(strings, contexts), 1):
             # Escape the string to prevent prompt injection
             escaped = string.replace('"', '\\"').replace('\n', '\\n')
-            numbered_strings.append(f'{i}. "{escaped}"')
+            context_part = f" [Context: {context}]" if context else ""
+            numbered_strings.append(f'{i}. "{escaped}"{context_part}')
         
-        prompt = f"""Please translate these {source_name} strings to {target_name}.{context_info}
+        prompt = f"""Please translate these {source_name} strings to {target_name}. {context_info}
 
 Strings to translate:
 {chr(10).join(numbered_strings)}
@@ -140,11 +148,12 @@ Strings to translate:
 Please respond with ONLY the translations in the following format (maintain the same numbering):
 1. "translated string 1"
 2. "translated string 2"
-...
+etc.
 
 Important:
 - Keep the same numbering format
 - Preserve any HTML tags, placeholders like {{0}}, %s, etc.
+- Use the context to provide accurate translations
 - If a string cannot be translated, return it unchanged
 - Maintain proper grammar and natural flow in {target_name}"""
 

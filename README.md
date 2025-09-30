@@ -131,9 +131,6 @@ bench translate-ai ru --app tajerp
 # Use specific OpenAI model
 bench translate-ai es --app custom_app --model gpt-4o-mini
 
-# Add context for better translations
-bench translate-ai fr --app erpnext --context "ERP business management"
-
 # Dry run to see what would be translated
 bench translate-ai zh --app myapp --dry-run
 
@@ -190,19 +187,6 @@ bench generate-pot-ai ru --app frappe --app erpnext --output-app my_app
 # Translate only the new empty strings
 bench translate-ai ru --app my_app
 ```
-
-## Language Codes
-
-Use standard ISO 639-1 language codes:
-
-| Language | Code | Language   | Code | Language   | Code |
-| -------- | ---- | ---------- | ---- | ---------- | ---- |
-| English  | en   | Spanish    | es   | French     | fr   |
-| German   | de   | Italian    | it   | Portuguese | pt   |
-| Russian  | ru   | Chinese    | zh   | Japanese   | ja   |
-| Korean   | ko   | Arabic     | ar   | Hindi      | hi   |
-| Thai     | th   | Vietnamese | vi   | Indonesian | id   |
-| Tajik    | tj   | Uzbek      | uz   | Persian    | fa   |
 
 ## Key Benefits
 

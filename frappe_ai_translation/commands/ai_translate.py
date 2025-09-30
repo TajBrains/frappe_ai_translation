@@ -122,7 +122,7 @@ def generate_pot_ai(target_locale: str, app: tuple = (), output_app: str = None)
 @click.argument("target_locale", required=True)
 @click.option("--app", required=True, help="App to translate")
 @click.option("--source-locale", default="en", help="Source language code (default: en)")
-@click.option("--model", default="gpt-4", help="OpenAI model to use for translation")
+@click.option("--model", default="gpt-4o-mini", help="OpenAI model to use for translation")
 @click.option("--batch-size", default=50, help="Number of strings to translate in each batch")
 @click.option("--dry-run", is_flag=True, help="Show what would be translated without making changes")
 @click.option("--overwrite-existing", is_flag=True, help="Overwrite existing translations (default: skip existing)")
@@ -130,7 +130,7 @@ def translate_ai(
     target_locale: str,
     app: str,
     source_locale: str = "en",
-    model: str = "gpt-4",
+    model: str = "gpt-4o-mini",
     batch_size: int = 50,
     dry_run: bool = False,
     overwrite_existing: bool = False

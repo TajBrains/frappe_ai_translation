@@ -9,12 +9,12 @@ from openai import OpenAI
 class AITranslator:
     """AI-powered translator using OpenAI API"""
     
-    def __init__(self, model: str = "gpt-4", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None):
         """
         Initialize AITranslator
         
         Args:
-            model: OpenAI model to use (gpt-4, gpt-3.5-turbo, etc.)
+            model: OpenAI model to use (gpt-4o-mini, gpt-3.5-turbo, etc.)
             api_key: OpenAI API key. If not provided, looks for OPENAI_API_KEY env var
         """
         self.model = model
@@ -33,7 +33,7 @@ class AITranslator:
         self.client = OpenAI(api_key=api_key)
         
         # Rate limiting settings
-        self.requests_per_minute = 60 if model.startswith("gpt-4") else 200
+        self.requests_per_minute = 60 if model.startswith("gpt-4o-mini") else 200
         self.last_request_time = 0
         self.request_interval = 60.0 / self.requests_per_minute
 

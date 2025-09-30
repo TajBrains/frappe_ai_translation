@@ -170,7 +170,14 @@ def translate_ai(
             continue
 
         # Check if string needs translation
-        has_translation = message.string and message.string.strip()
+        # A translation is considered empty if:
+        # 1. message.string is None
+        # 2. message.string is an empty string
+        # 3. message.string contains only whitespace
+        has_translation = (
+            message.string is not None and 
+            message.string.strip() != ""
+        )
 
         # Add to translation list if not translated or if overwriting existing
         if not has_translation or overwrite_existing:
@@ -218,16 +225,26 @@ def translate_ai(
             # Update PO catalog with translations
             batch_translated = 0
             for original, translated in translations.items():
-                if translated:
-                    # Find the message in catalog by iteration (po_catalog.get() doesn't work reliably)
+                # Validate translation: must be non-empty and not just whitespace
+                if translated and translated.strip():
+                    # Find the message in catalog by matching both ID and context
                     message = None
+                    # Get the context from the original batch item
+                    original_context = None
+                    for item in batch:
+                        if item['text'] == original:
+                            original_context = item['context']
+                            break
+                    
                     for msg in po_catalog:
-                        if msg.id == original:
+                        # Match both message ID and context
+                        if msg.id == original and msg.context == original_context:
                             message = msg
                             break
                     
                     if message is None:
-                        click.echo(f"⚠️  Warning: Message '{original[:50]}...' not found in catalog, skipping")
+                        context_info = f" (context: {original_context})" if original_context else " (no context)"
+                        click.echo(f"⚠️  Warning: Message '{original[:50]}...'{context_info} not found in catalog, skipping")
                         continue
                     
                     # Set the translation
